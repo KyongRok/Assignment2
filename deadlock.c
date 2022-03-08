@@ -35,6 +35,7 @@ int main (int argc , char* argv[]){
     
     struct process* p = malloc(sizeof(struct process) * res_man.num_task);
     for(int i = 0; i < res_man.num_task; i++){
+        //initiallize 2D array to 0 using calloc.
         p[i].instruction = (int**) calloc(10 , sizeof(int*));
         for(int j = 0; j < 10; j++){
             p[i].instruction[j] = (int*) calloc(4 , sizeof(int));
@@ -59,6 +60,7 @@ int main (int argc , char* argv[]){
                     }else if(strcmp(temp , "terminate") == 0){
                         p[i].instruction[j][k] = 5;
                         flag = 1;
+                        //when it reads terminate, that means next reading will be a new process
                     }
                 }else{
                     int temp;
@@ -91,6 +93,20 @@ int main (int argc , char* argv[]){
         }
     }
 
+
+    //start of code block for free
     free(res_man.add_value);
+    for(int i = 0; i < res_man.num_task; i++){
+        for(int j = 0; j < 10; j++){
+            free(p[i].instruction[j]);
+        }
+    }
+    for(int i = 0; i < res_man.num_task; i++){
+        free(p[i].instruction);
+    }
+    free(p);
+    //end of code block for free
     fclose(fp);
 }
+
+
