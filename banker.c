@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "deadlock.h"
+#include "banker.h"
 #include "function.h"
 
 int main (int argc , char* argv[]){
@@ -74,8 +74,6 @@ int main (int argc , char* argv[]){
         }
     }
 
-
-
     printf("%d %d" , res_man.num_task , res_man.num_resource);
     for(int i = 0; i < res_man.num_resource; i++){
         printf(" %d" , res_man.add_value[i]);
@@ -93,8 +91,8 @@ int main (int argc , char* argv[]){
         }
     }
 
-
     //start of code block for free
+    //leaks -atExit -- ./a.out  < to check memory leak
     free(res_man.add_value);
     for(int i = 0; i < res_man.num_task; i++){
         for(int j = 0; j < 10; j++){
