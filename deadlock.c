@@ -32,26 +32,64 @@ int main (int argc , char* argv[]){
         fscanf(fp , "%d" , &res_man.add_value[i]);
         //free add_value.
     }
-
-    struct process* p = malloc(res_man.num_task * sizeof(struct process));
+    
+    struct process* p = malloc(sizeof(struct process) * res_man.num_task);
+    for(int i = 0; i < res_man.num_task; i++){
+        p[i].instruction = (int**) calloc(10 , sizeof(int*));
+        for(int j = 0; j < 10; j++){
+            p[i].instruction[j] = (int*) calloc(4 , sizeof(int));
+        }
+    }
     for(int i = 0; i < res_man.num_task; i++){
         p[i].pid = i+1;
-        p->instruction = malloc(10 * sizeof(int*));
         for(int j = 0; j < 10; j++){
-            p->instruction[j] = NULL;
+            int flag = 0;
+            for(int k = 0; k < 4; k++){
+                if(k == 0){
+                    char temp[20];
+                    fscanf(fp , "%s" , temp);
+                    if(strcmp(temp , "initiate") == 0){
+                        p[i].instruction[j][k] = 1;
+                    }else if(strcmp(temp , "request") == 0){
+                        p[i].instruction[j][k] = 2;
+                    }else if(strcmp(temp , "compute") == 0){
+                        p[i].instruction[j][k] = 3;
+                    }else if(strcmp(temp , "release") == 0){
+                        p[i].instruction[j][k] = 4;
+                    }else if(strcmp(temp , "terminate") == 0){
+                        p[i].instruction[j][k] = 5;
+                        flag = 1;
+                    }
+                }else{
+                    int temp;
+                    fscanf(fp , "%d" , &temp);
+                    p[i].instruction[j][k] = temp;
+                }
+            }
+            if(flag == 1){
+                    j = 10;
+                }
         }
-        //free process's instruction**
     }
+
 
 
     printf("%d %d" , res_man.num_task , res_man.num_resource);
     for(int i = 0; i < res_man.num_resource; i++){
         printf(" %d" , res_man.add_value[i]);
     }
+    printf("\n");
     for(int i = 0; i < res_man.num_task; i++){
-        printf(" %d" , p[i].pid);
+        printf("%d\n" , p[i].pid);
     }
-
+    for(int i = 0; i < res_man.num_task; i++){
+        for(int j  = 0; j < 10; j++){
+            for(int k = 0; k < 4; k++){
+                printf("%d" , p[i].instruction[j][k]);
+            }
+            printf("\n");
+        }
+    }
 
     free(res_man.add_value);
     fclose(fp);
