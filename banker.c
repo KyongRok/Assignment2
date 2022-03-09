@@ -38,6 +38,7 @@ int main (int argc , char* argv[]){
     for(int i = 0; i < res_man.num_task; i++){
         int temp = i;
         process[i].pid = temp+1;
+        process[i].state = 0;
         process[i].initial_claim = (int*) calloc(res_man.num_task , sizeof(int));
         process[i].allocated = (int*) calloc(res_man.num_task , sizeof(int));
     }
@@ -81,21 +82,10 @@ int main (int argc , char* argv[]){
             }
         }
     }
-    
-    printf("%d %d" , res_man.num_task , res_man.num_resource);
-    for(int i = 0; i < res_man.num_resource; i++){
-        printf(" %d" , res_man.add_value[i]);
-    }
-    printf("\n");
-    for(int i = 0; i < 100; i++){
-        for(int j = 0; j < 4; j++){
-            printf("%d" , instruction->instruction[i][j]);
-        }
-        printf("\n");
-    }
+    banker_algo(process , res_man , instruction);
 
     //start of code block for free
-    //leaks -atExit -- ./a.out  < to check memory leak
+    //leaks -atExit -- ./a.out input  < to check memory leak (MacOs terminal)
     free(res_man.add_value);
     for(int i = 0; i < res_man.num_task; i++){
         free(process[i].initial_claim);
@@ -112,13 +102,52 @@ int main (int argc , char* argv[]){
 }
 
 
-void banker_algo(struct process* p , struct resource_manager res_man){
+void banker_algo(struct process* p , struct resource_manager res_man , struct instruction* inst){
     //while all process terminate 
     //give cycle to forloop -> with number of task,
     //if compute.... 줫같네 ㅅㅂ...
-
+    int clock = 0;
+    //initiation
+    int initiate_flag = -1;
+    for(int i = 0; i < res_man.num_resource; i++){
+        for(int j = 0; j < 100; j++){
+            for(int k = 0; k < 4; k++){
+                if(k == 0 && inst->instruction[j][k] == 1 && inst->instruction[j][k+2] == i){
+                    initiate(&p , &res_man , inst->instruction[j][k+1] , inst->instruction[j][k+2] , inst->instruction[j][k+3]);
+                    if(initiate_flag != i){
+                        clock++;
+                        initiate_flag = i;
+                    }
+                }
+            }
+        }
+    }
+    //end of initiation.
+    //initiation of same resource type is done in 1 cycle, hence if it goes to another
+    //resource type, then clock++; initiate_flag check if it goes to another resource type
     
+    //request
+
+
 }
+
+void initiate(struct process** p1 , struct resource_manager* res_man1 , int process_id , int resource_type , int resource_amount){
+    struct process* p = *p1;
+    struct resource_manager res_man = *res_man1;
+    
+    for(int i  = 0; i < res_man.num_task; i++){
+        if(p[i].pid == process_id){
+            if( resource_amount > res_man.add_value[resource_type]){
+                printf("Initial claim of %d is bigger than resource type %d", resource_amount , resource_type);
+                printf("abort process %d" , p[i].pid);
+                p[i].state = 2;
+            }else{
+                p[i].initial_claim[resource_type] = resource_amount;
+            } 
+        }
+    }
+}
+
 
 
 
