@@ -2,6 +2,8 @@
  * Full Name: KyongRok Kim 215813413
  * CourseID: EECS3221
  * Discription:
+ * initiate = 1, request = 2, compute = 3, release = 4, terminate = 5.
+ * ex: initiate 1 1 4 will be 1 1 1 4.
  */
 
 #include <stdio.h>
@@ -35,7 +37,7 @@ int main (int argc , char* argv[]){
     
     struct process* p = malloc(sizeof(struct process) * res_man.num_task);
     for(int i = 0; i < res_man.num_task; i++){
-        //initiallize 2D array to 0 using calloc.
+        //initiallize double pointers to 0 using calloc.
         p[i].instruction = (int**) calloc(10 , sizeof(int*));
         for(int j = 0; j < 10; j++){
             p[i].instruction[j] = (int*) calloc(4 , sizeof(int));
@@ -106,5 +108,6 @@ int main (int argc , char* argv[]){
     //end of code block for free
     fclose(fp);
 }
+
 
 
