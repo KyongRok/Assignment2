@@ -109,10 +109,10 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     int clock = 0;
     //initiation
     int initiate_flag = -1;
-    for(int i = 0; i < res_man.num_resource; i++){
+    for(int i = 1; i <= res_man.num_resource; i++){
         for(int j = 0; j < 100; j++){
             for(int k = 0; k < 4; k++){
-                if(k == 0 && inst->instruction[j][k] == 1 && inst->instruction[j][k+2] == i){
+                if(k == 0 && inst->instruction[j][k] == 1){
                     initiate(&p , &res_man , inst->instruction[j][k+1] , inst->instruction[j][k+2] , inst->instruction[j][k+3]);
                     if(initiate_flag != i){
                         clock++;
@@ -125,9 +125,22 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     //end of initiation.
     //initiation of same resource type is done in 1 cycle, hence if it goes to another
     //resource type, then clock++; initiate_flag check if it goes to another resource type
-    
+
     //request
 
+    //end of request.
+
+    //print
+    for(int i = 0; i < res_man.num_task; i++){
+        printf("pid: %d\n" , p[i].pid);
+        for(int j = 0; j < res_man.num_resource; j++){
+            printf(" initial claim: %d" , p[i].initial_claim[j]);
+            printf(" resource type: %d" , j+1);
+            printf(" allocated: %d\n" , p[i].allocated[j]);
+        }
+    }
+    printf("clock %d\n" , clock);
+    //end of print
 
 }
 
@@ -137,12 +150,12 @@ void initiate(struct process** p1 , struct resource_manager* res_man1 , int proc
     
     for(int i  = 0; i < res_man.num_task; i++){
         if(p[i].pid == process_id){
-            if( resource_amount > res_man.add_value[resource_type]){
-                printf("Initial claim of %d is bigger than resource type %d", resource_amount , resource_type);
-                printf("abort process %d" , p[i].pid);
+            if( resource_amount > res_man.add_value[resource_type - 1]){
+                printf("Initial claim of pid: %d , %d requested larger than resource type %d", p[i].pid, resource_amount , resource_type);
+                printf(" abort task %d\n" , p[i].pid);
                 p[i].state = 2;
             }else{
-                p[i].initial_claim[resource_type] = resource_amount;
+                p[i].initial_claim[resource_type - 1] = resource_amount;
             } 
         }
     }
