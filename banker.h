@@ -13,20 +13,21 @@ typedef struct resource_manager{
 
 typedef struct process{
     int pid;
+    int state;
     int* initial_claim;
     int* allocated;
+    //state to check if process is blocked or not 0 = not blocked, 1 = blocked, 2 = aborted
+    //array of initial claim; arrary index 0 means resource type 1 index 1 means resource type 2
+    //array of allocated resource; array index 0 means resource type 1 index 1 means resource type 2
 }process;
 
 typedef struct instruction{
     int** instruction;
     //limitation, there can be only 100 instruction.
+    //each instruction[j] is pointing to instruction[j][k] with size 4 of int
+    //2D array of instructions
 }instruction;
 
-typedef struct node{
-    struct process* p;
-    struct node* next;
-    //for linkedlist
-}node;
 
 
 
