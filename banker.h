@@ -13,9 +13,14 @@ typedef struct resource_manager{
 
 typedef struct process{
     int pid;
-    int** instruction;
-    //limitation, each task can have only up to 10 instruction
+    int* initial_claim;
+    int* allocated;
 }process;
+
+typedef struct instruction{
+    int** instruction;
+    //limitation, there can be only 100 instruction.
+}instruction;
 
 typedef struct node{
     struct process* p;
