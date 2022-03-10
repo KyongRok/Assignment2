@@ -89,6 +89,7 @@ int main (int argc , char* argv[]){
             process[i].task[j] = (int*) calloc(4 , sizeof(int));
         }
     }
+    //initiate instruction for each process
     for(int i = 0; i < res_man.num_task; i++){
          int t = 0;
         for(int j = 0; j < 100; j++){
@@ -133,7 +134,6 @@ int main (int argc , char* argv[]){
 void banker_algo(struct process* p , struct resource_manager res_man , struct instruction* inst){
     int clock = 0;
     //initiation
-    //int initiate_flag = -1;
     printf("%d\n" , clock);
     for(int i = 1; i <= res_man.num_resource; i++){
         for(int j = 0; j < 100; j++){
@@ -151,9 +151,53 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     //resource type, then clock++; initiate_flag check if it goes to another resource type
 
     //process running
+    int terminate = 0;
+    while(terminate < 5){
+        for(int i = 0; i < res_man.num_task; i++){
+            for(int j = 0; j < 20; j++){
+                for(int k = 0; k < 4; k++){
+                    if(k == 0){
+                        if(p[i].task[j][k] > 1){
+                            if(p[i].task[j][k] == 2){
+                                //request
+                                //if(request == sucess){
+                                    //code below should be here
+                                //}else{
+                                    //wait time increased
+                                //}
+                                p[i].task[j][k] = 0; //this should be in if
+                                j = 20;
+                            }else if(p[i].task[j][k] == 3){
+                                //compute
+                                //if(compute == sucess){
+                                    //some code here
+                                //}
+                                p[i].task[j][k] = 0; //this should be in if
+                                j = 20;
+                            }else if(p[i].task[j][k] == 4){
+                                //release
+                                //if(release == sucess){
+                                    //some code here
+                                //}
+                                p[i].task[j][k] = 0; //this should be in if
+                                j = 20;
+                            }else if(p[i].task[j][k] == 5){
+                                //terminate
+                                //if(terminate == sucess){
+                                    //some code here
+                                //}
+                                p[i].task[j][k] = 0;
+                                j = 20;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
 
-
+        terminate++;
+    }
     //end of process running
 
     //print
@@ -163,6 +207,14 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
             printf(" initial claim: %d" , p[i].initial_claim[j]);
             printf(" resource type: %d" , j+1);
             printf(" allocated: %d\n" , p[i].allocated[j]);
+        }
+    }
+    for(int i = 0; i < res_man.num_task; i++){
+        for(int j = 0; j < 20; j++){
+            for(int k = 0; k < 4; k++){
+                printf("%d" , p[i].task[j][k]);
+            }
+            printf("\n");
         }
     }
     printf("clock %d\n" , clock);
