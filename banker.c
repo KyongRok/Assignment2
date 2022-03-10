@@ -15,6 +15,7 @@
 int main (int argc , char* argv[]){
 
     FILE* fp = fopen(argv[1] , "r");
+
     struct resource_manager res_man;
     fscanf(fp , "%d" , &res_man.num_task);
     if(res_man.num_task <= 0){
@@ -32,13 +33,13 @@ int main (int argc , char* argv[]){
     res_man.add_value = (int*) malloc(res_man.num_resource * sizeof(int));
     for(int i = 0; i < res_man.num_resource; i++){
         fscanf(fp , "%d" , &res_man.add_value[i]);
-        //free add_value.
     }
     struct process* process = (struct process*) malloc(sizeof(struct process));
     for(int i = 0; i < res_man.num_task; i++){
         int temp = i;
         process[i].pid = temp+1;
         process[i].state = 0;
+        process[i].wait_time = 0;
         process[i].initial_claim = (int*) calloc(res_man.num_task , sizeof(int));
         process[i].allocated = (int*) calloc(res_man.num_task , sizeof(int));
     }
@@ -82,11 +83,39 @@ int main (int argc , char* argv[]){
             }
         }
     }
+    for(int i = 0; i < res_man.num_task; i++){
+        process[i].task = (int**) calloc(20 , sizeof(int*));
+        for(int j = 0; j < 20; j++){
+            process[i].task[j] = (int*) calloc(4 , sizeof(int));
+        }
+    }
+    for(int i = 0; i < res_man.num_task; i++){
+         int t = 0;
+        for(int j = 0; j < 100; j++){
+            for(int k = 0; k < 4; k++){
+                if(k == 0){
+                    if(instruction->instruction[j][k+1] == i+1){
+                        process[i].task[t][k] = instruction->instruction[j][k];
+                        process[i].task[t][k+1] = instruction->instruction[j][k+1];
+                        process[i].task[t][k+2] = instruction->instruction[j][k+2];
+                        process[i].task[t][k+3] = instruction->instruction[j][k+3];
+                        t++;
+                    }
+                }
+            }
+        }
+    }
     banker_algo(process , res_man , instruction);
 
     //start of code block for free
     //leaks -atExit -- ./a.out input  < to check memory leak (MacOs terminal)
     free(res_man.add_value);
+    for(int i = 0; i < res_man.num_task; i++){
+        for(int j = 0; j < 20; j++){
+            free(process[i].task[j]);
+        }
+        free(process[i].task);
+    }
     for(int i = 0; i < res_man.num_task; i++){
         free(process[i].initial_claim);
         free(process[i].allocated);
@@ -101,34 +130,31 @@ int main (int argc , char* argv[]){
     fclose(fp);
 }
 
-
 void banker_algo(struct process* p , struct resource_manager res_man , struct instruction* inst){
-    //while all process terminate 
-    //give cycle to forloop -> with number of task,
-    //if compute.... 줫같네 ㅅㅂ...
     int clock = 0;
     //initiation
-    int initiate_flag = -1;
+    //int initiate_flag = -1;
+    printf("%d\n" , clock);
     for(int i = 1; i <= res_man.num_resource; i++){
         for(int j = 0; j < 100; j++){
             for(int k = 0; k < 4; k++){
                 if(k == 0 && inst->instruction[j][k] == 1){
                     initiate(&p , &res_man , inst->instruction[j][k+1] , inst->instruction[j][k+2] , inst->instruction[j][k+3]);
-                    if(initiate_flag != i){
-                        clock++;
-                        initiate_flag = i;
-                    }
+                    inst->instruction[j][k] = 0;
                 }
             }
         }
+        clock++;
     }
     //end of initiation.
     //initiation of same resource type is done in 1 cycle, hence if it goes to another
     //resource type, then clock++; initiate_flag check if it goes to another resource type
 
-    //request
+    //process running
 
-    //end of request.
+
+
+    //end of process running
 
     //print
     for(int i = 0; i < res_man.num_task; i++){
@@ -160,6 +186,7 @@ void initiate(struct process** p1 , struct resource_manager* res_man1 , int proc
         }
     }
 }
+
 
 
 
