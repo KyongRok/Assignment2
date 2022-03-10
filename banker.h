@@ -11,6 +11,11 @@ typedef struct resource_manager{
     //limitation, value of each resource cannot be more than 9999
 }resource_manager;
 
+typedef struct collector{
+    int* resource_collect;
+    int time;
+}collector;
+
 typedef struct process{
     int pid;
     int state;

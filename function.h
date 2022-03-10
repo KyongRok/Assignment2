@@ -5,3 +5,5 @@
  */
 void banker_algo(struct process* p , struct resource_manager res_man, struct instruction* inst);
 void initiate(struct process** p1 , struct resource_manager* res_man1 , int process_id , int resource_type , int resource_amount);
+int request(struct process** p1 , struct resource_manager* res_man1, int process_id, int resouce_type , int resouce_amount);
+int isSafe(struct process p1 , struct resource_manager res_man1, int resouce_type , int resouce_amount);
