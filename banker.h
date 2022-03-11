@@ -13,17 +13,17 @@ typedef struct resource_manager{
 
 typedef struct collector{
     int* resource_collect;
-    int time;
 }collector;
 
 typedef struct process{
     int pid;
     int state;
     int wait_time;
+    int priority;
     int* initial_claim;
     int* allocated;
     int** task;
-    //state to check if process is waiting 0 = not blocked, 1 = waiting, 2 = aborted, 3 = terminate
+    //state to check if process is waiting 0 = waiting, 1 = not waiting, 2 = aborted, 3 = terminate
     //array of initial claim; arrary index 0 means resource type 1 index 1 means resource type 2
     //array of allocated resource; array index 0 means resource type 1 index 1 means resource type 2
 }process;
