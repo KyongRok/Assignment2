@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "banker.h"
 #include "function.h"
 
@@ -108,10 +109,12 @@ int main (int argc , char* argv[]){
             }
         }
     }
+
+    optimistic(process , res_man , instruction);
     banker_algo(process , res_man , instruction);
 
     //start of code block for free
-    //leaks -atExit -- ./a.out input  < to check memory leak (MacOs terminal)
+    //leaks -atExit -- ./a.out input  < to check memory leak (MacOS terminal)
     free(res_man.add_value);
     for(int i = 0; i < res_man.num_task; i++){
         for(int j = 0; j < 20; j++){
@@ -156,7 +159,6 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     collector.resource_collect = (int*) calloc(res_man.num_resource , sizeof(int));
     //resource collector, keeps the resources and gives back to banker after 1 cycle
 
-
     int terminate = 0;
     int ender = 0;
     while(ender < 3*res_man.num_task){
@@ -197,15 +199,23 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
                             //priority increased for sorting.
                             //put state into blocked
                         }else if(request_flag == 2){
-                            //abort task.
+                            abort_task1(&p[i] , &collector , res_man.num_resource);
+                            p[i].state = 2;
+                            j = 20;
                         }
                     }else if(p[i].task[j][0] == 3){
-                        //compute
-                        //if(compute == sucess){
-                        //some code here
-                        //}
-                        p[i].task[j][0] = 0; //this should be in if
-                        j = 20;
+                        int compute_flag = compute(&p[i]);
+                        if(compute_flag == 1){
+                            p[i].priority = 0;
+                            j = 20;
+                            //need to compute more
+                        }else if(compute_flag == 0){
+                            p[i].task[j][0] = 0;
+                            p[i].priority = 0;
+                            j = 20;
+                            //finish compute
+                        }
+                        
                     }else if(p[i].task[j][0] == 4){
                         //release
                         release(&collector , &p,p[i].pid,p[i].task[j][2],p[i].task[j][3]);
@@ -226,20 +236,13 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
         //blocked tasks are put at the start of the array so that they are looked into first
         qsort(p , res_man.num_task , sizeof(struct process),sort_by_priority);
         
-        for(int i = 0; i < res_man.num_task; i++){
-        printf("pid: %d" , p[i].pid);
-        printf(" priority: %d\n" , p[i].priority);
-        for(int j = 0; j < res_man.num_resource; j++){
-            printf(" initial claim: %d" , p[i].initial_claim[j]);
-            printf(" resource type: %d" , j+1);
-            printf(" allocated: %d\n" , p[i].allocated[j]);
-            }
-        }
         clock++;
-        terminate++;
-        printf("clock %d\n" , clock);
         for(int i = 0; i < res_man.num_task; i++){
-            ender += p[i].state;
+            if(p[i].state == 2){
+                ender += 3;
+            }else{
+                ender += p[i].state;
+            }
         }
     }
     //end of process running
@@ -247,20 +250,31 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     free(collector.resource_collect);
 
     printf("        Banker's    \n");
-    float wait_t = 0;
-    float term_t = 0;
-    float percent = 0;
+    double wait_t = 0;
+    double term_t = 0;
+    double percent = 0;
+    int total_wait = 0;
+    int total_term = 0;
     for(int i = 0; i < res_man.num_task; i++){
-        wait_t = (float) p[i].wait_time;
-        term_t = (float) p[i].terminate_time;
-        percent = (wait_t / term_t)*100; 
-        
-        printf("Task %d",p[i].pid);
-        printf("    %d" , p[i].terminate_time);
-        printf("    %d" , p[i].wait_time);
-        printf("    %.1f\n" ,percent); //?????
+        if(p[i].state != 2){
+            total_wait += p[i].wait_time;
+            total_term += p[i].terminate_time;
+            wait_t = (double) p[i].wait_time;
+            term_t = (double) p[i].terminate_time;
+            percent = (wait_t / term_t)*100;
+            percent = round(percent);
+            printf("Task %d",p[i].pid);
+            printf("    %d" , p[i].terminate_time);
+            printf("    %d" , p[i].wait_time);
+            printf("    %d%%\n" ,(int) percent);
+        }else{
+            printf("Task %d",p[i].pid);
+            printf("      ABORTED      \n");
+        }
     }
-    //printf("Total    %d    %d    %f%%\n" , tot_time_taken , tot_wait_time , (tot_percnet/res_man.num_task)*100 );
+    double print = ((double) total_wait / (double) total_term)*100;
+    print = round(print);
+    printf("Total    %d    %d    %d%%\n" , total_term , total_wait , (int) print );
 
 }
 
@@ -301,6 +315,7 @@ int request(struct process** p1 , struct resource_manager* res_man1, int process
                 //unsafe, so task is put to wait
                 return 0;
             }else{
+                //safe
                 return 1;
             }
         }
@@ -357,7 +372,30 @@ void release(struct collector* col , struct process** p1, int process_id , int r
 
 }
 
-//abort function here
+void abort_task1(struct process* p , struct collector* col, int num_task){
+    for(int i = 0; i < num_task; i++){
+        int temp = p->allocated[i];
+        p->allocated[i] = 0;
+        col->resource_collect[i] += temp;
+    }
+    //abort task, releases all resources to collector
+}
+
+int compute(struct process* p){
+    for(int i = 0; i < 20; i++){
+        printf("%d\n" , p->task[i][0]);
+        if(p->task[i][0] == 3){
+            p->task[i][2] = p->task[i][2] - 1;
+            if(p->task[i][2] == 0){
+                return 0;
+            }else{
+                return 1;
+            }
+        }
+    }
+    //returns 0 if compute finish, return 1 if it need more cycle to finish compute task
+    return 2;
+}
 
 int sort_by_priority(const void* a, const void* b){
     struct process p1 = *((struct process*) a);
@@ -367,6 +405,12 @@ int sort_by_priority(const void* a, const void* b){
     }else{
         return (p2.priority - p1.priority);
     }
+    //decending order of priority. if equal, samller task ID is prefered
+}
+
+void optimistic(struct process* process , struct resource_manager res_man , struct instruction* inst){
+
+
 }
 
 

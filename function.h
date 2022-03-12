@@ -9,4 +9,8 @@ int request(struct process** p1 , struct resource_manager* res_man1, int process
 int isSafe(struct process p1 , struct resource_manager res_man1, int resouce_type , int resouce_amount);
 void release(struct collector* col , struct process** p1, int process_id , int resource_type, int resouce_amount);
 int sort_by_priority(const void* a, const void* b);
+int compute(struct process* p);
+void abort_task1(struct process* p , struct collector* col, int num_task);
+void optimistic(struct process* p, struct resource_manager res_man, struct instruction* inst);
+
 
