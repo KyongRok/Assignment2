@@ -136,8 +136,7 @@ int main (int argc , char* argv[]){
 void banker_algo(struct process* p , struct resource_manager res_man , struct instruction* inst){
     int clock = 0;
     //initiation
-    printf("%d\n" , clock);
-    for(int i = 1; i <= res_man.num_resource; i++){
+    for(int i = 0; i < res_man.num_resource; i++){
         for(int j = 0; j < 100; j++){
             for(int k = 0; k < 4; k++){
                 if(k == 0 && inst->instruction[j][k] == 1){
