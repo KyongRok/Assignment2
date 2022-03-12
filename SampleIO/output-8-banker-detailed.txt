@@ -41,7 +41,7 @@ During  8 - 9
   Task 2 completes its release (resource[1]: released = 4, available next cycle = 4)
 During  9 - 10
   First check blocked tasks:
-    Task 3 request still cannot be granted.
+    Task 3 request still cannot be granted. //why request not granted?
     Task 1 request still cannot be granted.
   Task 2 completes its release (resource[2]: released = 1, available next cycle = 4)
 During  10 - 11

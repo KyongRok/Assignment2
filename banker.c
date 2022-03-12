@@ -41,6 +41,7 @@ int main (int argc , char* argv[]){
         process[i].state = 1;
         process[i].priority = 0;
         process[i].wait_time = 0;
+        process[i].terminate_time = 0;
         process[i].initial_claim = (int*) calloc(res_man.num_task , sizeof(int));
         process[i].allocated = (int*) calloc(res_man.num_task , sizeof(int));
     }
@@ -158,23 +159,25 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
 
 
     int terminate = 0;
-    while(terminate < 30){
-        //collect resource from collector.
-        for(int i = 0; i < res_man.num_resource; i++){
-            if(collector.resource_collect[i] != 0){
-                int temp = collector.resource_collect[i];
-                collector.resource_collect[i] = 0;
-                res_man.add_value[i] += temp; 
-            }
-        }
-        //end of collector
+    int ender = 0;
+    while(ender < 3*res_man.num_task){
+        ender = 0;
+                //collect resource from collector.
+                for(int i = 0; i < res_man.num_resource; i++){
+                    if(collector.resource_collect[i] != 0){
+                        int temp = collector.resource_collect[i];
+                        collector.resource_collect[i] = 0;
+                        res_man.add_value[i] += temp; 
+                    }
+                }
+                //end of collector
         for(int i = 0; i < res_man.num_task; i++){
             for(int j = 0; j < 20; j++){
                 int k = 0;
                 while(k != 0){
                     k = p[i].task[j][0];
                 }
-                if(p[i].task[j][k] > 1 && p[i].state != 2){
+                if(p[i].task[j][k] > 1 && p[i].state != 2 && p[i].state != 3){
                     if(p[i].task[j][k] == 2){
                             //request
                             //request function returns 2 when task has to be aborted
@@ -194,6 +197,8 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
                             //wait time increased
                             //priority increased for sorting.
                             //put state into blocked
+                        }else if(request_flag == 2){
+                            //abort task.
                         }
                     }else if(p[i].task[j][0] == 3){
                         //compute
@@ -208,10 +213,8 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
                         p[i].task[j][0] = 0;
                         j = 20;
                     }else if(p[i].task[j][0] == 5){
-                        //terminate
-                        //if(terminate == sucess){
-                        //some code here
-                        //}
+                        p[i].state = 3;
+                        p[i].terminate_time = clock;
                         p[i].task[j][0] = 0;
                         j = 20;
                     }else{
@@ -222,7 +225,6 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
         }
         //sorts in process array first by state then pid
         //blocked tasks are put at the start of the array so that they are looked into first
-
         qsort(p , res_man.num_task , sizeof(struct process),sort_by_priority);
         
         for(int i = 0; i < res_man.num_task; i++){
@@ -234,21 +236,33 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
             printf(" allocated: %d\n" , p[i].allocated[j]);
             }
         }
-    /*for(int i = 0; i < res_man.num_task; i++){
-        for(int j = 0; j < 20; j++){
-            for(int k = 0; k < 4; k++){
-                printf("%d" , p[i].task[j][k]);
-            }
-            printf("\n");
-        }
-    }*/
         clock++;
-        terminate++;
         printf("clock %d\n" , clock);
+        for(int i = 0; i < res_man.num_task; i++){
+            ender += p[i].state;
+        }
     }
     //end of process running
     //free resource collector.
     free(collector.resource_collect);
+
+    printf("        Banker's    \n");
+    int tot_time_taken = 0;
+    int tot_wait_time = 0;
+    float tot_percent = 0;
+    for(int i = 0; i < res_man.num_task; i++){
+        tot_time_taken = tot_time_taken + p[i].terminate_time;
+        tot_wait_time = tot_wait_time + p[i].wait_time;
+        float wait_t = (float) p[i].wait_time;
+        float term_t = (float) p[i].terminate_time;
+        float percent = (wait_t / term_t)*100; 
+        printf("Task %d",p[i].pid);
+        printf("    %d" , p[i].terminate_time);
+        printf("    %d\n" , p[i].wait_time);
+        //printf("    %.1f\n" ,percent); //?????
+    }
+    //printf("Total    %d    %d    %f%%\n" , tot_time_taken , tot_wait_time , (tot_percnet/res_man.num_task)*100 );
+
 }
 
 void initiate(struct process** p1 , struct resource_manager* res_man1 , int process_id , int resource_type , int resource_amount){
@@ -278,12 +292,13 @@ int request(struct process** p1 , struct resource_manager* res_man1, int process
 
     for(int i = 0; i < res_man.num_task; i++){
         if(p[i].pid == process_id){
-            if(isSafe(p[i] , res_man , resouce_type , resouce_amount) == 0){
+            int isSafe_flag = isSafe(p[i] , res_man , resouce_type , resouce_amount);
+            if(isSafe_flag == 0){
                 //request > banker's resource. abort task
                 p[i].state = 2;
                 //release function call (abort function)
                 return 2;
-            }else if(isSafe(p[i] , res_man , resouce_type , resouce_amount) == 2){
+            }else if(isSafe_flag == 2){
                 //unsafe, so task is put to wait
                 return 0;
             }else{
@@ -300,18 +315,30 @@ int isSafe(struct process p1 , struct resource_manager res_man1, int resouce_typ
     //if task aborted return 0.
     if(p1.initial_claim[resouce_type - 1] < resouce_amount){
         //abort task due to requesting more than initial claim
-        printf("task %d request more than it's initial claim, !!aboring task? %d\n" , p1.pid , p1.pid);
+        printf("task %d request more than it's initial claim, aboring task? %d\n" , p1.pid , p1.pid);
         return 0;
     }else if(p1.allocated[resouce_type - 1] + resouce_amount > p1.initial_claim[resouce_type-1]){
         //abort task because request more than initial claim (allocated + request > initial claim)
-        printf("task %d request more than it's initial claim, !aboring task %d\n" , p1.pid , p1.pid);
+        printf("task %d request more than it's initial claim, aboring task %d\n" , p1.pid , p1.pid);
         return 0;
-    }else if(res_man1.add_value[resouce_type - 1] < resouce_amount){
-        //unsafe has to wait
-        return 2;
     }else{
-        //safe
-        return 1;
+        //safe check for other resources as well
+        int safe_flag = 0;
+        if(resouce_amount <= res_man1.add_value[resouce_type -1]){
+            safe_flag++;
+        }
+        for(int i = 0; i < res_man1.num_task; i++){
+            if(i != (resouce_type - 1)){
+                if(p1.allocated[i] != 0 || p1.initial_claim[i] <= res_man1.add_value[i]){
+                    safe_flag++;
+                }
+            }
+        }
+        if(safe_flag == res_man1.num_resource){
+            return 1;
+        }else{
+            return 2;
+        }
     }
 }
 
@@ -329,14 +356,17 @@ void release(struct collector* col , struct process** p1, int process_id , int r
 
 }
 
+//abort function here
+
 int sort_by_priority(const void* a, const void* b){
     struct process p1 = *((struct process*) a);
     struct process p2 = *((struct process*) b);
-    if(p1.pid == p2.pid){
+    if(p1.priority == p2.priority){
         return (p1.pid - p2.pid);
     }else{
         return (p2.priority - p1.priority);
     }
 }
+
 
 

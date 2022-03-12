@@ -20,6 +20,7 @@ typedef struct process{
     int state;
     int wait_time;
     int priority;
+    int terminate_time;
     int* initial_claim;
     int* allocated;
     int** task;
