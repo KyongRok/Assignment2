@@ -247,23 +247,18 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     free(collector.resource_collect);
 
     printf("        Banker's    \n");
-    int tot_time_taken = 0;
-    int tot_wait_time = 0;
-    float tot_percent = 0;
     float wait_t = 0;
     float term_t = 0;
     float percent = 0;
     for(int i = 0; i < res_man.num_task; i++){
-        tot_time_taken = tot_time_taken + p[i].terminate_time;
-        tot_wait_time = tot_wait_time + p[i].wait_time;
         wait_t = (float) p[i].wait_time;
         term_t = (float) p[i].terminate_time;
         percent = (wait_t / term_t)*100; 
         
         printf("Task %d",p[i].pid);
         printf("    %d" , p[i].terminate_time);
-        printf("    %d\n" , p[i].wait_time);
-        //printf("    %.1f\n" ,percent); //?????
+        printf("    %d" , p[i].wait_time);
+        printf("    %.1f\n" ,percent); //?????
     }
     //printf("Total    %d    %d    %f%%\n" , tot_time_taken , tot_wait_time , (tot_percnet/res_man.num_task)*100 );
 
