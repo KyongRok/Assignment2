@@ -34,7 +34,7 @@ int main (int argc , char* argv[]){
     for(int i = 0; i < res_man.num_resource; i++){
         fscanf(fp , "%d" , &res_man.add_value[i]);
     }
-    struct process* process = (struct process*) malloc(sizeof(struct process));
+    struct process* process = (struct process*) malloc(sizeof(struct process) * res_man.num_task);
     for(int i = 0; i < res_man.num_task; i++){
         int temp = i;
         process[i].pid = temp+1;
@@ -159,7 +159,7 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
 
     int terminate = 0;
     int ender = 0;
-    while(terminate < 20){ //(ender < 3*res_man.num_task){
+    while(ender < 3*res_man.num_task){
         ender = 0;
                 //collect resource from collector.
                 for(int i = 0; i < res_man.num_resource; i++){
