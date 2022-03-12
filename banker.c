@@ -409,8 +409,7 @@ int sort_by_priority(const void* a, const void* b){
 }
 
 void optimistic(struct process* process , struct resource_manager res_man , struct instruction* inst){
-
-
+    
 }
 
 

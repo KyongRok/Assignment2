@@ -14,3 +14,4 @@ void abort_task1(struct process* p , struct collector* col, int num_task);
 void optimistic(struct process* p, struct resource_manager res_man, struct instruction* inst);
 
 
+
