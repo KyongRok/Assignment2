@@ -159,7 +159,7 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
 
     int terminate = 0;
     int ender = 0;
-    while(ender < 3*res_man.num_task){
+    while(terminate < 20){ //(ender < 3*res_man.num_task){
         ender = 0;
                 //collect resource from collector.
                 for(int i = 0; i < res_man.num_resource; i++){
@@ -236,6 +236,7 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
             }
         }
         clock++;
+        terminate++;
         printf("clock %d\n" , clock);
         for(int i = 0; i < res_man.num_task; i++){
             ender += p[i].state;
@@ -249,12 +250,16 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     int tot_time_taken = 0;
     int tot_wait_time = 0;
     float tot_percent = 0;
+    float wait_t = 0;
+    float term_t = 0;
+    float percent = 0;
     for(int i = 0; i < res_man.num_task; i++){
         tot_time_taken = tot_time_taken + p[i].terminate_time;
         tot_wait_time = tot_wait_time + p[i].wait_time;
-        float wait_t = (float) p[i].wait_time;
-        float term_t = (float) p[i].terminate_time;
-        float percent = (wait_t / term_t)*100; 
+        wait_t = (float) p[i].wait_time;
+        term_t = (float) p[i].terminate_time;
+        percent = (wait_t / term_t)*100; 
+        
         printf("Task %d",p[i].pid);
         printf("    %d" , p[i].terminate_time);
         printf("    %d\n" , p[i].wait_time);
@@ -323,14 +328,16 @@ int isSafe(struct process p1 , struct resource_manager res_man1, int resouce_typ
     }else{
         //safe check for other resources as well
         int safe_flag = 0;
-        if(resouce_amount <= res_man1.add_value[resouce_type -1]){
-            safe_flag++;
-        }
+        int need[res_man1.num_task];
         for(int i = 0; i < res_man1.num_task; i++){
-            if(i != (resouce_type - 1)){
-                if(p1.allocated[i] != 0 || p1.initial_claim[i] <= res_man1.add_value[i]){
-                    safe_flag++;
-                }
+            need[i] = 0;
+        }
+        for(int i = 0; i < res_man1.num_resource; i++){
+            need[i] = p1.initial_claim[i];
+        }
+        for(int i = 0; i < res_man1.num_resource; i++){
+            if(need[i] - p1.allocated[i] <= res_man1.add_value[i]){
+                safe_flag++;
             }
         }
         if(safe_flag == res_man1.num_resource){
