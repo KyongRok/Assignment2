@@ -287,8 +287,8 @@ void initiate(struct process** p1 , struct resource_manager* res_man1 , int proc
             if( resource_amount > res_man.add_value[resource_type - 1]){
                 //resource initiation is greater than banker's resource
                 //abort the task (call abort function)
-                printf("Initial claim of pid: %d , %d requested larger than resource type %d", p[i].pid, resource_amount , resource_type);
-                printf(" abort task %d\n" , p[i].pid);
+                printf("Banker aborts task%d before run begins:\n", p[i].pid);
+                printf("    claim for resource %d (%d) exceeds number of units present (%d)\n" , resource_type , resource_amount , res_man1->add_value[resource_type-1]);
                 p[i].state = 2;
             }else{
                 //initiation success
@@ -329,7 +329,7 @@ int isSafe(struct process p1 , struct resource_manager res_man1, int resouce_typ
     //if task aborted return 0.
     if(p1.initial_claim[resouce_type - 1] < resouce_amount){
         //abort task due to requesting more than initial claim
-        printf("task %d request more than it's initial claim, aboring task? %d\n" , p1.pid , p1.pid);
+        printf("task %d request more than it's initial claim, aboring task %d\n" , p1.pid , p1.pid);
         return 0;
     }else if(p1.allocated[resouce_type - 1] + resouce_amount > p1.initial_claim[resouce_type-1]){
         //abort task because request more than initial claim (allocated + request > initial claim)
@@ -409,7 +409,7 @@ int sort_by_priority(const void* a, const void* b){
 }
 
 void optimistic(struct process* process , struct resource_manager res_man , struct instruction* inst){
-    
+
 }
 
 
