@@ -56,6 +56,7 @@ int main (int argc , char* argv[]){
         int temp = i;
         process1[i].pid = temp+1;
         process1[i].state = 1;
+        process1[i].priority = 0;
         process1[i].wait_time = 0;
         process1[i].terminate_time = 0;
         process1[i].allocated = (int*) calloc(res_man1.num_task , sizeof(int));
@@ -444,6 +445,11 @@ void optimistic(struct process* process , struct resource_manager res_man){
     int terminate = 0;
     int clock = 0;
     //add ender
+    int initial[res_man.num_resource];
+    for(int i = 0; i < res_man.num_resource; i++){
+        initial[i] = res_man.add_value[i];
+    }
+
     while(terminate < 20){
         int deadlock_detect = 0;
         for(int i = 0; i < res_man.num_resource; i++){
@@ -462,7 +468,7 @@ void optimistic(struct process* process , struct resource_manager res_man){
                         j = 20;
                     }else if(process[i].task[j][0] == 2){
                         //request_optimistic function call
-                        int request_flag = request_optimistic(&process[i] , res_man);
+                        int request_flag = request_optimistic(&process[i] , res_man,initial[process[i].task[j][2] -1]);
                         if(request_flag == 1){
                             //printf("here1");
                             process[i].task[j][0] = 0;
@@ -470,21 +476,29 @@ void optimistic(struct process* process , struct resource_manager res_man){
                             int request_amount = process[i].task[j][3];
                             process[i].allocated[resource_type] += request_amount;
                             res_man.add_value[resource_type] -= request_amount;
+                            process[i].priority = 0;
                             j = 20;
                         }else if(request_flag == 0){
                             deadlock_detect++;
                             process[i].wait_time++;
+                            process[i].priority++;
                             j = 20;
                             //if deadlock_detect == numer of task, that means all tasks are waiting
                             //hence deadlock
+                        }else if(request_flag == 2){
+                            abort_task1(&process[i] , &collector,res_man.num_resource);
+                            process[i].state = 2;
+                            j = 20;
                         }
                     }else if(process[i].task[j][0] == 3){
                         int compute_flag = compute(&process[i]);
                         if(compute_flag == 1){
+                            process[i].priority = 0;
                             j = 20;
                             //need to compute more
                         }else if(compute_flag == 0){
                             process[i].task[j][0] = 0;
+                            process[i].priority = 0;
                             j = 20;
                             //finish compute
                         }
@@ -521,16 +535,19 @@ void optimistic(struct process* process , struct resource_manager res_man){
             }
             int dead = 0;
             while(dead != running_task){
+                //since lowest id has to be aborted first, sort by id
+                qsort(process , res_man.num_task , sizeof(struct process),sort_by_id);
                 for(int i = 0; i < res_man.num_task; i++){
-                    if(process[i].state != 2){
+                    if(process[i].state != 2 && process[i].state != 3){
                         abort_task1(&process[i] , &collector , res_man.num_resource);
                         process[i].state = 2;
                         break;
                     }
                 }
-                
+                //sort back to priority
+                qsort(process , res_man.num_task , sizeof(struct process),sort_by_priority);
                 for(int i = 0; i < res_man.num_task; i++){
-                    if(process[i].state != 2){
+                    if(process[i].state != 2 && process[i].state != 3){
                         for(int j = 0; j < 20; j++){
                             if(process[i].task[j][0] == 2){
                                 int resource_type = process[i].task[j][2];
@@ -539,17 +556,18 @@ void optimistic(struct process* process , struct resource_manager res_man){
                                 j = 20;
                                 for(int i = 0; i < res_man.num_resource; i++){
                                     if(res_man.add_value[i] + collector.resource_collect[i]  >= need[i]){
-                                        dead++;
+                                        dead = running_task;
                                     }
                                 }
                             }
                         }
                     }
                 }
-                dead++;
+                //dead++;
             }
             
         }
+        qsort(process , res_man.num_task , sizeof(struct process),sort_by_priority);
         clock++;
         terminate++;
     }
@@ -558,6 +576,7 @@ void optimistic(struct process* process , struct resource_manager res_man){
     double percent = 0;
     int total_wait = 0;
     int total_term = 0;
+    qsort(process , res_man.num_task , sizeof(struct process),sort_by_id);
     printf("        FIFO        \n");
     for(int i = 0; i < res_man.num_task; i++){
         if(process[i].state != 2){
@@ -583,14 +602,19 @@ void optimistic(struct process* process , struct resource_manager res_man){
     free(collector.resource_collect);
 }
 
-int request_optimistic(struct process* p , struct resource_manager res_man){
+int request_optimistic(struct process* p , struct resource_manager res_man,int initial){
     for(int i = 0; i < 20; i++){
         if(p->task[i][0] == 2){
             int resource_type = p->task[i][2] -1;
             int request_amount = p->task[i][3];
+            int alloc = 0;
+            
             if(res_man.add_value[resource_type] >= request_amount){
                 //request granted
                 return 1;
+            }else if(initial < request_amount){
+                //abort task since request too much
+                return 2;
             }else{
                 //wait
                 return 0;
@@ -600,6 +624,14 @@ int request_optimistic(struct process* p , struct resource_manager res_man){
     //return 1 if request granted, else 0.
     //return 2 when it failed to find task
     return 2;
+}
+
+int sort_by_id(const void* a, const void* b){
+    struct process p1 = *((struct process*) a);
+    struct process p2 = *((struct process*) b);
+        return (p1.pid - p2.pid);
+    
+    //sort in ascdending order of id
 }
 
 
