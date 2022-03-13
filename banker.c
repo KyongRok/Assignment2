@@ -33,6 +33,7 @@ int main (int argc , char* argv[]){
         fclose(fp);
         exit(1);
     }
+    //read input in the first line
 
     res_man.add_value = (int*) malloc(res_man.num_resource * sizeof(int));
     res_man1.add_value = (int*) malloc(res_man1.num_resource * sizeof(int));
@@ -61,6 +62,8 @@ int main (int argc , char* argv[]){
         process1[i].terminate_time = 0;
         process1[i].allocated = (int*) calloc(res_man1.num_task , sizeof(int));
     }
+    //initialize process
+
     //initiallize double pointers to 0 using calloc.
     struct instruction* instruction = malloc(sizeof(struct instruction));
     instruction->instruction = (int**) calloc(100 , sizeof(int*));
@@ -101,6 +104,9 @@ int main (int argc , char* argv[]){
             }
         }
     }
+    //read the file for instructions
+
+    //initialize task's instruction
     for(int i = 0; i < res_man.num_task; i++){
         process[i].task = (int**) calloc(20 , sizeof(int*));
         for(int j = 0; j < 20; j++){
@@ -140,7 +146,7 @@ int main (int argc , char* argv[]){
 
     optimistic(process1 , res_man1);
     banker_algo(process , res_man , instruction);
-
+    //print
     double wait_t = 0;
     double term_t = 0;
     double percent = 0;
@@ -197,10 +203,8 @@ int main (int argc , char* argv[]){
     print1 = round(print1);
     printf("Total     %d    %d    %d%%" , total_term , total_wait , (int) print );
     printf("          Total     %d    %d    %d%%\n" , total_term1 , total_wait1 , (int) print1 );
+    //print end here
 
-
-
-    
     //start of code block for free
     //leaks -atExit -- ./a.out input  < to check memory leak (MacOS terminal)
     free(res_man.add_value);
@@ -255,7 +259,7 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     int ender = 0;
     while(ender < 3*res_man.num_task){
         ender = 0;
-                //collect resource from collector.
+                //collect resource from collector back to resource manager
                 for(int i = 0; i < res_man.num_resource; i++){
                     if(collector.resource_collect[i] != 0){
                         int temp = collector.resource_collect[i];
