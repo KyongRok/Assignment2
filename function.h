@@ -11,7 +11,8 @@ void release(struct collector* col , struct process** p1, int process_id , int r
 int sort_by_priority(const void* a, const void* b);
 int compute(struct process* p);
 void abort_task1(struct process* p , struct collector* col, int num_task);
-void optimistic(struct process* p, struct resource_manager res_man, struct instruction* inst);
+void optimistic(struct process* p, struct resource_manager res_man);
+int request_optimistic(struct process* p , struct resource_manager res_man);
 
 
 

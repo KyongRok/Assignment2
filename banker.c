@@ -18,13 +18,16 @@ int main (int argc , char* argv[]){
     FILE* fp = fopen(argv[1] , "r");
 
     struct resource_manager res_man;
+    struct resource_manager res_man1;
     fscanf(fp , "%d" , &res_man.num_task);
+    res_man1.num_task = res_man.num_task;
     if(res_man.num_task <= 0){
         printf("Error number of task less or equal to 0");
         fclose(fp);
         exit(1);
     }
     fscanf(fp , "%d" , &res_man.num_resource);
+    res_man1.num_resource = res_man.num_resource;
     if(res_man.num_resource <= 0){
         printf("Error number of resources less or equal to 0");
         fclose(fp);
@@ -32,10 +35,13 @@ int main (int argc , char* argv[]){
     }
 
     res_man.add_value = (int*) malloc(res_man.num_resource * sizeof(int));
+    res_man1.add_value = (int*) malloc(res_man1.num_resource * sizeof(int));
     for(int i = 0; i < res_man.num_resource; i++){
         fscanf(fp , "%d" , &res_man.add_value[i]);
+        res_man1.add_value[i] = res_man.add_value[i];
     }
     struct process* process = (struct process*) malloc(sizeof(struct process) * res_man.num_task);
+    struct process* process1 = (struct process*) malloc(sizeof(struct process) * res_man1.num_task);
     for(int i = 0; i < res_man.num_task; i++){
         int temp = i;
         process[i].pid = temp+1;
@@ -45,6 +51,14 @@ int main (int argc , char* argv[]){
         process[i].terminate_time = 0;
         process[i].initial_claim = (int*) calloc(res_man.num_task , sizeof(int));
         process[i].allocated = (int*) calloc(res_man.num_task , sizeof(int));
+    }
+    for(int i = 0; i < res_man1.num_task; i++){
+        int temp = i;
+        process1[i].pid = temp+1;
+        process1[i].state = 1;
+        process1[i].wait_time = 0;
+        process1[i].terminate_time = 0;
+        process1[i].allocated = (int*) calloc(res_man1.num_task , sizeof(int));
     }
     //initiallize double pointers to 0 using calloc.
     struct instruction* instruction = malloc(sizeof(struct instruction));
@@ -92,6 +106,12 @@ int main (int argc , char* argv[]){
             process[i].task[j] = (int*) calloc(4 , sizeof(int));
         }
     }
+    for(int i = 0 ; i < res_man1.num_task; i++){
+        process1[i].task = (int**) calloc(20 , sizeof(int*));
+        for(int j = 0; j < 20; j++){
+            process1[i].task[j] = (int*) calloc(4 , sizeof(int));
+        }
+    }
     //initiate instruction for each process
     for(int i = 0; i < res_man.num_task; i++){
          int t = 0;
@@ -103,6 +123,11 @@ int main (int argc , char* argv[]){
                         process[i].task[t][k+1] = instruction->instruction[j][k+1];
                         process[i].task[t][k+2] = instruction->instruction[j][k+2];
                         process[i].task[t][k+3] = instruction->instruction[j][k+3];
+
+                        process1[i].task[t][k] = instruction->instruction[j][k];
+                        process1[i].task[t][k+1] = instruction->instruction[j][k+1];
+                        process1[i].task[t][k+2] = instruction->instruction[j][k+2];
+                        process1[i].task[t][k+3] = instruction->instruction[j][k+3];
                         t++;
                     }
                 }
@@ -110,23 +135,29 @@ int main (int argc , char* argv[]){
         }
     }
 
-    optimistic(process , res_man , instruction);
     banker_algo(process , res_man , instruction);
+    optimistic(process1 , res_man1);
+    
 
     //start of code block for free
     //leaks -atExit -- ./a.out input  < to check memory leak (MacOS terminal)
     free(res_man.add_value);
+    free(res_man1.add_value);
     for(int i = 0; i < res_man.num_task; i++){
         for(int j = 0; j < 20; j++){
             free(process[i].task[j]);
+            free(process1[i].task[j]);
         }
         free(process[i].task);
+        free(process1[i].task);
     }
     for(int i = 0; i < res_man.num_task; i++){
         free(process[i].initial_claim);
         free(process[i].allocated);
+        free(process1[i].allocated);
     }
     free(process);
+    free(process1);
     for(int j = 0; j < 100; j++){
         free(instruction->instruction[j]);
     }
@@ -159,7 +190,6 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     collector.resource_collect = (int*) calloc(res_man.num_resource , sizeof(int));
     //resource collector, keeps the resources and gives back to banker after 1 cycle
 
-    int terminate = 0;
     int ender = 0;
     while(ender < 3*res_man.num_task){
         ender = 0;
@@ -274,7 +304,7 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     }
     double print = ((double) total_wait / (double) total_term)*100;
     print = round(print);
-    printf("Total    %d    %d    %d%%\n" , total_term , total_wait , (int) print );
+    printf("Total     %d    %d    %d%%\n" , total_term , total_wait , (int) print );
 
 }
 
@@ -372,8 +402,8 @@ void release(struct collector* col , struct process** p1, int process_id , int r
 
 }
 
-void abort_task1(struct process* p , struct collector* col, int num_task){
-    for(int i = 0; i < num_task; i++){
+void abort_task1(struct process* p , struct collector* col, int num_resource){
+    for(int i = 0; i < num_resource; i++){
         int temp = p->allocated[i];
         p->allocated[i] = 0;
         col->resource_collect[i] += temp;
@@ -383,7 +413,6 @@ void abort_task1(struct process* p , struct collector* col, int num_task){
 
 int compute(struct process* p){
     for(int i = 0; i < 20; i++){
-        printf("%d\n" , p->task[i][0]);
         if(p->task[i][0] == 3){
             p->task[i][2] = p->task[i][2] - 1;
             if(p->task[i][2] == 0){
@@ -408,9 +437,172 @@ int sort_by_priority(const void* a, const void* b){
     //decending order of priority. if equal, samller task ID is prefered
 }
 
-void optimistic(struct process* process , struct resource_manager res_man , struct instruction* inst){
+void optimistic(struct process* process , struct resource_manager res_man){
+    
+    struct collector collector;
+    collector.resource_collect = calloc(res_man.num_task , sizeof(int));
+    int terminate = 0;
+    int clock = 0;
+    //add ender
+    while(terminate < 20){
+        int deadlock_detect = 0;
+        for(int i = 0; i < res_man.num_resource; i++){
+            int temp = collector.resource_collect[i];
+            collector.resource_collect[i] = 0;
+            res_man.add_value[i] += temp;
+        }
+        //collector gives to resource manager
 
+        for(int i = 0; i < res_man.num_task; i++){
+            for(int j = 0; j < 20; j++){
+                if(process[i].state != 2 && process[i].state != 3){
+                    if(process[i].task[j][0] == 1){
+                        //initiate
+                        process[i].task[j][0] = 0;
+                        j = 20;
+                    }else if(process[i].task[j][0] == 2){
+                        //request_optimistic function call
+                        int request_flag = request_optimistic(&process[i] , res_man);
+                        if(request_flag == 1){
+                            //printf("here1");
+                            process[i].task[j][0] = 0;
+                            int resource_type = process[i].task[j][2] -1;
+                            int request_amount = process[i].task[j][3];
+                            process[i].allocated[resource_type] += request_amount;
+                            res_man.add_value[resource_type] -= request_amount;
+                            j = 20;
+                        }else if(request_flag == 0){
+                            deadlock_detect++;
+                            process[i].wait_time++;
+                            j = 20;
+                            //if deadlock_detect == numer of task, that means all tasks are waiting
+                            //hence deadlock
+                        }
+                    }else if(process[i].task[j][0] == 3){
+                        int compute_flag = compute(&process[i]);
+                        if(compute_flag == 1){
+                            j = 20;
+                            //need to compute more
+                        }else if(compute_flag == 0){
+                            process[i].task[j][0] = 0;
+                            j = 20;
+                            //finish compute
+                        }
+                    }else if(process[i].task[j][0] == 4){
+                        //release function call
+                        int resource_type = process[i].task[j][2];
+                        int resource_amount = process[i].task[j][3];
+                        release(&collector , &process, process[i].pid ,resource_type , resource_amount);
+                        process[i].task[j][0] = 0;
+                        j = 20;
+                    }else if(process[i].task[j][0] == 5){
+                        //terminate
+                        process[i].task[j][0] = 0;
+                        process[i].terminate_time = clock;
+                        process[i].state = 3;
+                        j = 20;
+                    }
+                }
+            }
+        }
+        //check for deadlock
+        int running_task = 0;
+        for(int i = 0; i < res_man.num_task; i++){
+            if(process[i].state != 2 && process[i].state != 3){
+                running_task++;
+            }
+        }
+
+        if(deadlock_detect == running_task){
+            //abort first task
+            int need[res_man.num_resource];
+            for(int i = 0; i < res_man.num_resource; i++){
+                need[i] = 0;
+            }
+            int dead = 0;
+            while(dead != running_task){
+                for(int i = 0; i < res_man.num_task; i++){
+                    if(process[i].state != 2){
+                        abort_task1(&process[i] , &collector , res_man.num_resource);
+                        process[i].state = 2;
+                        break;
+                    }
+                }
+                
+                for(int i = 0; i < res_man.num_task; i++){
+                    if(process[i].state != 2){
+                        for(int j = 0; j < 20; j++){
+                            if(process[i].task[j][0] == 2){
+                                int resource_type = process[i].task[j][2];
+                                int resource_amount = process[i].task[j][3];
+                                need[resource_type - 1] = resource_amount;
+                                j = 20;
+                                for(int i = 0; i < res_man.num_resource; i++){
+                                    if(res_man.add_value[i] + collector.resource_collect[i]  >= need[i]){
+                                        dead++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                dead++;
+            }
+            
+        }
+        clock++;
+        terminate++;
+    }
+    double wait_t = 0;
+    double term_t = 0;
+    double percent = 0;
+    int total_wait = 0;
+    int total_term = 0;
+    printf("        FIFO        \n");
+    for(int i = 0; i < res_man.num_task; i++){
+        if(process[i].state != 2){
+            total_wait += process[i].wait_time;
+            total_term += process[i].terminate_time;
+            wait_t = (double) process[i].wait_time;
+            term_t = (double) process[i].terminate_time;
+            percent = (wait_t / term_t)*100;
+            percent = round(percent);
+            printf("Task %d",process[i].pid);
+            printf("    %d" , process[i].terminate_time);
+            printf("    %d" , process[i].wait_time);
+            printf("    %d%%\n" ,(int) percent);
+        }else{
+            printf("Task %d", process[i].pid);
+            printf("      ABORTED      \n");
+        }
+    }
+    double print = ((double) total_wait / (double) total_term)*100;
+    print = round(print);
+    printf("Total     %d    %d    %d%%\n" , total_term , total_wait , (int) print );
+
+    free(collector.resource_collect);
 }
+
+int request_optimistic(struct process* p , struct resource_manager res_man){
+    for(int i = 0; i < 20; i++){
+        if(p->task[i][0] == 2){
+            int resource_type = p->task[i][2] -1;
+            int request_amount = p->task[i][3];
+            if(res_man.add_value[resource_type] >= request_amount){
+                //request granted
+                return 1;
+            }else{
+                //wait
+                return 0;
+            }
+        }
+    }
+    //return 1 if request granted, else 0.
+    //return 2 when it failed to find task
+    return 2;
+}
+
+
 
 
 
