@@ -135,11 +135,72 @@ int main (int argc , char* argv[]){
             }
         }
     }
+    //used 2 different array of process/resource_manager because running 1 algorithm
+    //will change the values in the array of process (since using pointer)
 
-    banker_algo(process , res_man , instruction);
     optimistic(process1 , res_man1);
-    
+    banker_algo(process , res_man , instruction);
 
+    double wait_t = 0;
+    double term_t = 0;
+    double percent = 0;
+    int total_wait = 0;
+    int total_term = 0;
+    double wait_t1 = 0;
+    double term_t1 = 0;
+    double percent1 = 0;
+    int total_wait1 = 0;
+    int total_term1 = 0;
+        printf("           FIFO               ");
+        printf("        Banker's    \n");
+    for(int i = 0; i < res_man1.num_task; i++){
+            if(process1[i].state != 2){
+                total_wait += process1[i].wait_time;
+                total_term += process1[i].terminate_time;
+                wait_t = (double) process1[i].wait_time;
+                term_t = (double) process1[i].terminate_time;
+                percent = (wait_t / term_t)*100;
+                percent = round(percent);
+            }
+            if(process[i].state != 2){
+                total_wait1 += process[i].wait_time;
+                total_term1 += process[i].terminate_time;
+                wait_t1 = (double) process[i].wait_time;
+                term_t1 = (double) process[i].terminate_time;
+                percent1 = (wait_t1 / term_t1)*100;
+                percent1 = round(percent1);
+            }
+        if(process1[i].state != 2){
+            printf("Task %d",process1[i].pid);
+            printf("    %d" , process1[i].terminate_time);
+            printf("    %d" , process1[i].wait_time);
+            printf("    %d%%          " ,(int) percent);
+        }
+        if(process1[i].state == 2){
+            printf("Task %d", process1[i].pid);
+            printf("      ABORTED              ");
+        }
+        if(process[i].state != 2){
+            printf("Task %d",process[i].pid);
+            printf("    %d" , process[i].terminate_time);
+            printf("    %d" , process[i].wait_time);
+            printf("    %d%%\n" ,(int) percent1);
+        }
+        if(process[i].state == 2){
+            printf("Task %d",process[i].pid);
+            printf("      ABORTED      \n");
+        }
+    }
+    double print = ((double) total_wait / (double) total_term)*100;
+    print = round(print);
+    double print1 = ((double) total_wait1 / (double) total_term1)*100;
+    print1 = round(print1);
+    printf("Total     %d    %d    %d%%" , total_term , total_wait , (int) print );
+    printf("          Total     %d    %d    %d%%\n" , total_term1 , total_wait1 , (int) print1 );
+
+
+
+    
     //start of code block for free
     //leaks -atExit -- ./a.out input  < to check memory leak (MacOS terminal)
     free(res_man.add_value);
@@ -279,34 +340,6 @@ void banker_algo(struct process* p , struct resource_manager res_man , struct in
     //end of process running
     //free resource collector.
     free(collector.resource_collect);
-
-    printf("        Banker's    \n");
-    double wait_t = 0;
-    double term_t = 0;
-    double percent = 0;
-    int total_wait = 0;
-    int total_term = 0;
-    for(int i = 0; i < res_man.num_task; i++){
-        if(p[i].state != 2){
-            total_wait += p[i].wait_time;
-            total_term += p[i].terminate_time;
-            wait_t = (double) p[i].wait_time;
-            term_t = (double) p[i].terminate_time;
-            percent = (wait_t / term_t)*100;
-            percent = round(percent);
-            printf("Task %d",p[i].pid);
-            printf("    %d" , p[i].terminate_time);
-            printf("    %d" , p[i].wait_time);
-            printf("    %d%%\n" ,(int) percent);
-        }else{
-            printf("Task %d",p[i].pid);
-            printf("      ABORTED      \n");
-        }
-    }
-    double print = ((double) total_wait / (double) total_term)*100;
-    print = round(print);
-    printf("Total     %d    %d    %d%%\n" , total_term , total_wait , (int) print );
-
 }
 
 void initiate(struct process** p1 , struct resource_manager* res_man1 , int process_id , int resource_type , int resource_amount){
@@ -319,7 +352,7 @@ void initiate(struct process** p1 , struct resource_manager* res_man1 , int proc
                 //resource initiation is greater than banker's resource
                 //abort the task (call abort function)
                 printf("Banker aborts task%d before run begins:\n", p[i].pid);
-                printf("    claim for resource %d (%d) exceeds number of units present (%d)\n" , resource_type , resource_amount , res_man1->add_value[resource_type-1]);
+                printf("claim for resource %d (%d) exceeds number of units present (%d)\n" , resource_type , resource_amount , res_man1->add_value[resource_type-1]);
                 p[i].state = 2;
             }else{
                 //initiation success
@@ -554,6 +587,7 @@ void optimistic(struct process* process , struct resource_manager res_man){
                                 int resource_amount = process[i].task[j][3];
                                 need[resource_type - 1] = resource_amount;
                                 j = 20;
+                                //if there is any task that can be granted, stop aborting
                                 for(int i = 0; i < res_man.num_resource; i++){
                                     if(res_man.add_value[i] + collector.resource_collect[i]  >= need[i]){
                                         dead = running_task;
@@ -571,34 +605,7 @@ void optimistic(struct process* process , struct resource_manager res_man){
         clock++;
         terminate++;
     }
-    double wait_t = 0;
-    double term_t = 0;
-    double percent = 0;
-    int total_wait = 0;
-    int total_term = 0;
     qsort(process , res_man.num_task , sizeof(struct process),sort_by_id);
-    printf("        FIFO        \n");
-    for(int i = 0; i < res_man.num_task; i++){
-        if(process[i].state != 2){
-            total_wait += process[i].wait_time;
-            total_term += process[i].terminate_time;
-            wait_t = (double) process[i].wait_time;
-            term_t = (double) process[i].terminate_time;
-            percent = (wait_t / term_t)*100;
-            percent = round(percent);
-            printf("Task %d",process[i].pid);
-            printf("    %d" , process[i].terminate_time);
-            printf("    %d" , process[i].wait_time);
-            printf("    %d%%\n" ,(int) percent);
-        }else{
-            printf("Task %d", process[i].pid);
-            printf("      ABORTED      \n");
-        }
-    }
-    double print = ((double) total_wait / (double) total_term)*100;
-    print = round(print);
-    printf("Total     %d    %d    %d%%\n" , total_term , total_wait , (int) print );
-
     free(collector.resource_collect);
 }
 
