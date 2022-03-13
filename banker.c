@@ -2,6 +2,7 @@
  * Full Name: KyongRok Kim 215813413
  * CourseID: EECS3221
  * Discription:
+ * 2 algorithm, banker's and FIFO. uses 2D array for instructions
  * initiate = 1, request = 2, compute = 3, release = 4, terminate = 5.
  * ex: initiate 1 1 4 will be 1 1 1 4.
  */
