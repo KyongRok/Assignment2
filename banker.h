@@ -1,7 +1,7 @@
 /**
  * Full Name: KyongRok Kim 215813413
  * CourseID: EECS3221
- * Discription:
+ * Discription:holds all typedef/data structre
  */
 
 typedef struct resource_manager{
@@ -13,6 +13,7 @@ typedef struct resource_manager{
 
 typedef struct collector{
     int* resource_collect;
+    //resource collector holds the resources release till next cycle
 }collector;
 
 typedef struct process{
@@ -27,6 +28,10 @@ typedef struct process{
     //state to check if process is waiting 0 = waiting, 1 = not waiting, 2 = aborted, 3 = terminate
     //array of initial claim; arrary index 0 means resource type 1 index 1 means resource type 2
     //array of allocated resource; array index 0 means resource type 1 index 1 means resource type 2
+    //priority checks how long it has been waiting
+    //task holds the taks's instructions
+    //pid is the task number
+    //terminate time is time it terminated
 }process;
 
 typedef struct instruction{
