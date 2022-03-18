@@ -480,15 +480,15 @@ void optimistic(struct process* process , struct resource_manager res_man){
     
     struct collector collector;
     collector.resource_collect = calloc(res_man.num_task , sizeof(int));
-    int terminate = 0;
     int clock = 0;
-    //add ender
+    int ender = 0;
     int initial[res_man.num_resource];
     for(int i = 0; i < res_man.num_resource; i++){
         initial[i] = res_man.add_value[i];
     }
 
-    while(terminate < 20){
+    while(ender < 3*res_man.num_task){
+        ender = 0;
         int deadlock_detect = 0;
         for(int i = 0; i < res_man.num_resource; i++){
             int temp = collector.resource_collect[i];
@@ -608,7 +608,15 @@ void optimistic(struct process* process , struct resource_manager res_man){
         }
         qsort(process , res_man.num_task , sizeof(struct process),sort_by_priority);
         clock++;
-        terminate++;
+
+        for(int i = 0; i < res_man.num_task; i++){
+            if(process[i].state == 2){
+                ender += 3;
+            }else{
+                ender += process[i].state;
+            }
+        }
+        
     }
     qsort(process , res_man.num_task , sizeof(struct process),sort_by_id);
     free(collector.resource_collect);

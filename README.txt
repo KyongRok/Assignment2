@@ -1,6 +1,6 @@
 Full Name: KyongRok Kim 215813413
 CourseID: EECS3221
-Discription: README.txt
+Description: README.txt
 
                     **How to compile** 
 go to directory where all files are present (banker.c banker.h function.h Makefile)
@@ -9,8 +9,8 @@ then type in ./banker <name of input file> //without < and >
 
                     **Dependancy**
 banker.c is the main
-banker.h holds the data structre for banker.c 
-functionl.h holds the function headers for banker.c 
+banker.h holds the data structure for banker.c 
+function.h holds the function headers for banker.c 
 
                     **Data structure**
 resource_manager: holds number of task, number of resource and creates dynamically allocated memory of
